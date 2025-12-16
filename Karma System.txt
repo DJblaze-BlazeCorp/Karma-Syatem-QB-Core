@@ -1,3 +1,6 @@
+Old
+
+
 Sure! Here’s a detailed, standalone, copy/paste-ready guide for implementing the Karma / Reputation System into another QBCore script. It includes all the configuration, structure, and usage instructions in plain text format, ready to be used as `.txt` or `.md`.
 
 ---
