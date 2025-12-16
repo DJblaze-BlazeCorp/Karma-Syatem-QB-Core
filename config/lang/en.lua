@@ -1,3 +1,4 @@
+-- config/lang/en.lua
 -- Language strings for user-facing messages
 Strings = {
     karmaUpdated = 'Reputation updated. New value: {player_karma}',
@@ -9,7 +10,7 @@ Strings = {
     regenerationOffline = 'Offline reputation regeneration applied.',
     adminSetKarma = 'Admin set karma for ID {player} to {player_karma}.',
     adminAddKarma = 'Admin adjusted karma for ID {player} by {amount}.',
-    adminCheckKarma = 'Karma for player {player} is {karma}.',
+    adminCheckKarma = 'Karma for player {player} is {player_karma}.',
     adminResetKarma = 'Karma reset for player {player}.'
 }
 -- Exports for dynamic placeholders
