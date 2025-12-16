@@ -1,0 +1,294 @@
+Sure! Here’s a detailed, standalone, copy/paste-ready guide for implementing the Karma / Reputation System into another QBCore script. It includes all the configuration, structure, and usage instructions in plain text format, ready to be used as `.txt` or `.md`.
+
+---
+
+# QBCore Karma / Reputation System Integration Guide
+
+Version: **1.8.0**
+Purpose: Implement a full-featured karma/reputation system with persistent storage, job gating, admin tools, and debug support.
+
+---
+
+## 1. Overview
+
+The **Karma / Reputation System** provides a flexible way to track player behavior on your server. Karma represents a player's actions and can affect access to jobs, trigger events, and be modified by admins. It is fully modular and supports:
+
+* Persistent MySQL storage for each player’s karma
+* Positive and negative karma events
+* Job gating based on minimum karma thresholds
+* Admin commands with optional debug messages
+* Language and debug language files for modular text and dynamic placeholders
+* Optional webhook notifications for karma changes
+
+Integrating this into another script allows you to:
+
+* Check if a player meets karma requirements for specific actions
+* Trigger karma events based on gameplay actions
+* Access and modify karma from other resources via exports
+
+---
+
+## 2. Installation
+
+1. Place the `karma-system` folder into your `resources` directory.
+2. Add to `server.cfg`:
+
+```lua
+ensure karma-system
+```
+
+3. Ensure `oxmysql` is installed and running.
+4. Restart your server and verify that the system loads without errors.
+
+---
+
+## 3. File Structure
+
+The resource uses a modular structure to separate configuration, language, and core scripts:
+
+```
+karma-system/
+│ fxmanifest.lua
+│ server.lua
+│ client.lua
+├─ config/
+│   ├─ config.lua
+│   ├─ commands.lua
+│   ├─ gating.lua
+│   ├─ adding.lua
+│   ├─ removing.lua
+│   └─ lang/
+│       ├─ en.lua
+│       └─ debug/
+│           └─ en.lua
+```
+
+---
+
+## 4. Configuration
+
+The system is split into multiple config files for clarity.
+
+### `config/config.lua`
+
+Key system settings:
+
+```lua
+Config.BaseKarma = 50          -- Starting karma for all players
+Config.MinKarma  = 0           -- Minimum allowed karma
+Config.MaxKarma  = 100         -- Maximum allowed karma
+Config.AllowNegative = true    -- Allow karma below 0
+Config.RegenToBaseMinutesOnline  = 600  -- Minutes for online regeneration
+Config.RegenToBaseMinutesOffline = 150  -- Minutes for offline regeneration
+Config.Webhook = nil           -- Optional webhook URL for logging
+Config.WebhookMessage = 'Karma │ %player% → %player_karma% │ %reason%'
+Config.Language = 'en'         -- Main language file
+Config.DebugLanguage = 'debug/en' -- Debug language file
+Config.Admins = {}             -- Admin whitelist
+```
+
+---
+
+### `config/gating.lua`
+
+Define minimum karma for job access:
+
+```lua
+Config.Gating = {
+    police    = 40,
+    ambulance = 20,
+    lawyer    = 30,
+    mechanic  = 10,
+    taxi      = 0,
+    tow       = 5,
+    judge     = 50,
+    sheriff   = 45
+}
+```
+
+This ensures players cannot join certain jobs unless they meet the karma requirement.
+
+---
+
+### `config/adding.lua` (Positive Karma)
+
+```lua
+Config.AddKarmaEvents = {
+    help_civilian      = { amount = 10, reason = 'Helped a civilian' },
+    revived_player     = { amount = 15, reason = 'Revived a downed player' },
+    completed_job      = { amount = 5,  reason = 'Completed legal job' },
+    rescued_injured    = { amount = 12, reason = 'Rescued an injured civilian' },
+    protected_store    = { amount = 20, reason = 'Helped stop a robbery' }
+}
+```
+
+---
+
+### `config/removing.lua` (Negative Karma)
+
+```lua
+Config.RemoveKarmaEvents = {
+    bank_robbery     = { amount = -50, reason = 'Bank robbery' },
+    store_robbery    = { amount = -10, reason = 'Store robbery' },
+    player_killed    = { amount = -5,  reason = 'Killed a player' },
+    police_attack    = { amount = -15, reason = 'Attacked law enforcement' },
+    hostage_taken    = { amount = -25, reason = 'Took a hostage' }
+}
+```
+
+---
+
+### `config/commands.lua` (Admin Commands)
+
+```lua
+Config.Commands = {
+    setKarma   = 'setkarma',
+    addKarma   = 'addkarma',
+    checkKarma = 'checkkarma',
+    resetKarma = 'resetkarma',
+    debugKarma = 'debugkarma'
+}
+```
+
+---
+
+## 5. Language & Debug System
+
+Language strings are fully modular and support dynamic placeholders.
+
+### `config/lang/en.lua`
+
+```lua
+Strings = {
+    karmaUpdated        = 'Reputation updated. New value: %player_karma%',
+    karmaUpdatedReason  = 'Reputation updated by %amount%. Reason: %reason%',
+    gatingBlocked       = 'You do not have enough reputation to access this job.',
+    regeneration        = 'Reputation regeneration applied.',
+    regenerationOffline = 'Offline reputation regeneration applied.',
+    adminSetKarma       = 'Admin set karma for ID %player% to %player_karma%.',
+    adminAddKarma       = 'Admin adjusted karma for ID %player% by %amount%.',
+    adminCheckKarma     = 'Karma for player %player% is %amount%.',
+    adminResetKarma     = 'Karma reset for player %player%.'
+}
+
+Exports = {
+    PlayerName    = '%player%',
+    PlayerKarma   = '%player_karma%',
+    Amount        = '%amount%',
+    Reason        = '%reason%',
+    Event         = '%event%'
+}
+```
+
+### `config/lang/debug/en.lua`
+
+Debug messages provide detailed server logs for admin monitoring:
+
+```lua
+DebugStrings = {
+    karmaUpdated        = '[DEBUG] Reputation set: %player_karma%',
+    karmaUpdatedReason  = '[DEBUG] Reputation changed by %amount%. Reason: %reason%',
+    gatingBlocked       = '[DEBUG] Karma gate blocked for job.',
+    regeneration        = '[DEBUG] Karma regeneration applied (online).',
+    regenerationOffline = '[DEBUG] Karma regeneration applied (offline).',
+    adminSetKarma       = '[DEBUG] Admin manually set karma for %player% to %player_karma%',
+    adminAddKarma       = '[DEBUG] Admin manually adjusted karma for %player% by %amount%',
+    adminCheckKarma     = '[DEBUG] Checked karma for %player%: %amount%',
+    adminResetKarma     = '[DEBUG] Karma reset for %player%'
+}
+
+DebugExports = {
+    PlayerName    = '%player%',
+    PlayerKarma   = '%player_karma%',
+    Amount        = '%amount%',
+    Reason        = '%reason%',
+    Event         = '%event%'
+}
+```
+
+---
+
+## 6. Exports & Integration
+
+Other scripts can interact with the system via exports:
+
+```lua
+-- Get player karma
+local karma = exports['karma-system']:GetKarma(playerId)
+
+-- Set player karma
+exports['karma-system']:SetKarma(playerId, 75, "Event reason")
+
+-- Apply a karma event
+exports['karma-system']:ApplyKarmaEvent('help_civilian', playerId)
+
+-- Check if a player has enough karma for a job
+local allowed = exports['karma-system']:HasKarmaForGate(playerId, 'police')
+
+-- Access language strings for custom notifications
+local lang = exports['karma-system']:GetLangStrings()
+local placeholders = exports['karma-system']:GetLangExports()
+```
+
+---
+
+## 7. Using Karma in Another Script
+
+To integrate into your gameplay scripts:
+
+```lua
+-- Example: Trigger a karma event when a player helps another
+RegisterNetEvent('myScript:helpedPlayer', function(helperId)
+    exports['karma-system']:ApplyKarmaEvent('help_civilian', helperId)
+end)
+
+-- Example: Check karma before allowing a special action
+local playerId = source
+if exports['karma-system']:HasKarmaForGate(playerId, 'police') then
+    -- Allow action
+else
+    QBCore.Functions.Notify(playerId, "You need more reputation to do this!", "error")
+end
+```
+
+---
+
+## 8. Admin Commands
+
+Admins can use commands in-game:
+
+| Command       | Description                          |
+| ------------- | ------------------------------------ |
+| `/setkarma`   | Set a player’s karma                 |
+| `/addkarma`   | Add or subtract karma                |
+| `/checkkarma` | View a player’s current karma        |
+| `/resetkarma` | Reset karma to base value            |
+| `/debugkarma` | Show debug strings and karma changes |
+
+---
+
+## 9. Performance & Safety
+
+* Uses **oxmysql** for async database operations.
+* Ensures rows exist for all players before updating karma.
+* Optional debug messages allow safe monitoring without affecting gameplay.
+* Prevents job or event access if karma requirements are not met.
+
+---
+
+## 10. Summary
+
+Integrating the **Karma / Reputation System** into another script provides a robust framework for player behavior tracking, event gating, and administrative control. Its modular configuration and language system make it adaptable for any QBCore-based server.
+
+Once integrated, your server can:
+
+* Reward or penalize players dynamically
+* Gate access to jobs or special content
+* Provide admins with easy monitoring and controls
+* Use customizable messages and debug outputs
+
+This setup ensures your server has a **persistent, flexible, and scalable reputation system** ready for advanced gameplay interactions.
+
+---
+
+This guide is fully copy-paste ready for `.txt` or `.md` use and includes all required implementation details for integration into other QBCore scripts.
