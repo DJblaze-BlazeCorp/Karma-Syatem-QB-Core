@@ -1,3 +1,4 @@
+-- config/adding.lua
 -- Positive karma events (adding karma)
 Config.AddKarmaEvents = {
     help_civilian = { amount = 10, reason = 'Helped a civilian' },
