@@ -1,4 +1,3 @@
--- config/commands.lua
 -- Admin command configuration
 Config.Commands = {
     setKarma = 'setkarma',
