@@ -1,3 +1,4 @@
+-- config/lang/debug/en.lua
 -- Debug language strings for admin monitoring
 DebugStrings = {
     karmaUpdated = '[DEBUG] Reputation changed: %last% → %player_karma%',
