@@ -1,3 +1,4 @@
+-- client.lua
 local QBCore = exports['qb-core']:GetCoreObject()
 ---------------------------------------------------------------------
 -- LANGUAGE LOAD
