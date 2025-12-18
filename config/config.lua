@@ -1,4 +1,3 @@
--- config/config.lua
 -- Main system configuration for the Karma / Reputation System
 Config = {}
 -- ============================================
@@ -7,7 +6,6 @@ Config = {}
 Config.BaseKarma = 450 -- Starting karma for every player
 Config.MinKarma = 0 -- Minimum karma allowed
 Config.MaxKarma = 1000 -- Maximum karma allowed
-Config.AllowNegative = false -- Allow karma to go below 0
 -- ============================================
 -- KARMA REGENERATION SYSTEM
 -- ============================================
@@ -20,8 +18,7 @@ Config.RegenRemoveWhenAbove = true -- Enable removing when above base
 -- ============================================
 -- LOG & WEBHOOK SETTINGS
 -- ============================================
-Config.Webhook = nil
-Config.WebhookMessage = 'Karma │ %player% → %player_karma% │ %reason%'
+Config.Webhook = nil -- Set to your Discord webhook URL for notifications
 -- ============================================
 -- LANGUAGE SETTINGS
 -- ============================================
