@@ -1,4 +1,3 @@
--- config/lang/debug/en.lua
 -- Debug language strings for admin monitoring
 DebugStrings = {
     karmaUpdated = '[DEBUG] Reputation changed: %last% → %player_karma%',
@@ -9,7 +8,7 @@ DebugStrings = {
     regenerationOffline = '[DEBUG] Karma regeneration applied (offline).',
     adminSetKarma = '[DEBUG] Admin manually set karma for %player%: %last% → %player_karma%',
     adminAddKarma = '[DEBUG] Admin manually adjusted karma for %player%: %last% → %player_karma% by %amount%',
-    adminCheckKarma = '[DEBUG] Checked karma for %player%: %last% → %player_karma%',
+    adminCheckKarma = '[DEBUG] Checked karma for %player%: %player_karma%',
     adminResetKarma = '[DEBUG] Karma reset for %player%'
 }
 DebugExports = {
