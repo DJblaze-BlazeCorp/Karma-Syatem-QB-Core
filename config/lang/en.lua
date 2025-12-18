@@ -1,4 +1,3 @@
--- config/lang/en.lua
 -- Language strings for user-facing messages
 Strings = {
     karmaUpdated = 'Reputation updated. New value: {player_karma}',
@@ -11,7 +10,21 @@ Strings = {
     adminSetKarma = 'Admin set karma for ID {player} to {player_karma}.',
     adminAddKarma = 'Admin adjusted karma for ID {player} by {amount}.',
     adminCheckKarma = 'Karma for player {player} is {player_karma}.',
-    adminResetKarma = 'Karma reset for player {player}.'
+    adminResetKarma = 'Karma reset for player {player}.',
+    webhook_message = 'Karma │ {player} → {player_karma} │ {reason}',
+    -- Event reasons
+    recycle_duty = 'Going on recycling duty',
+    help_civilian = 'Helped a civilian',
+    revived_player = 'Revived a downed player',
+    completed_job = 'Completed legal job',
+    rescued_injured = 'Rescued an injured civilian',
+    protected_store = 'Helped stop a robbery',
+    bank_robbery = 'Bank robbery',
+    store_rob_register = "Robbed a store register",
+    store_rob_safe = "Robbed a store safe",
+    player_killed = 'Killed a player',
+    police_attack = 'Attacked law enforcement',
+    hostage_taken = 'Took a hostage',
 }
 -- Exports for dynamic placeholders
 Exports = {
@@ -19,5 +32,7 @@ Exports = {
     PlayerKarma = '{player_karma}',
     Amount = '{amount}',
     Reason = '{reason}',
-    Event = '{event}'
+    Event = '{event}',
+    Min = '{min}',  -- Added for gating min value
+    Max = '{max}'   -- Added for gating max value
 }
