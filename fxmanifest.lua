@@ -1,4 +1,3 @@
--- fxmanifest.lua
 fx_version 'cerulean'
 game 'gta5'
 author 'Generated for Jesse'
