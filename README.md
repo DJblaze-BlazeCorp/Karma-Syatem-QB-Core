@@ -1,259 +1,222 @@
-# README.md: Karma / Reputation System for QBCore (FiveM)
+#### README.md (updated to match current code)
+```
+# QBCore Karma / Reputation System  
+Version **1.8.0** — Full Modular Configuration, Event Gating Only, Admin Tools, SQL Tracking, Language Exports, Debug Language Support
 
-![Karma System Banner](https://via.placeholder.com/800x200?text=Karma+System) <!-- Placeholder for a banner image; replace with actual if available -->
+---
+
+## Table of Contents
+1. [Overview](#overview)  
+2. [Features](#features)  
+3. [Installation](#installation)  
+4. [Configuration](#configuration)  
+5. [File Structure](#file-structure)  
+6. [Usage](#usage)  
+7. [Language & Debug System](#language--debug-system)  
+8. [Admin Commands](#admin-commands)  
+9. [Events & Exports](#events--exports)  
+10. [Performance & Safety](#performance--safety)  
+11. [Contributing](#contributing)  
+12. [Notes](#notes)  
+
+---
 
 ## Overview
+The **QBCore Karma / Reputation System** introduces a persistent **reputation score** for each player in your FiveM server.  
+This score is influenced by player actions, admin commands, and automated events.  
 
-The Karma / Reputation System is a comprehensive Lua-based script designed for FiveM servers using the QBCore framework. It introduces a dynamic reputation (karma) mechanic where players start with a configurable base karma score (default: 50). Karma fluctuates based on in-game actions—positive actions increase it (e.g., reviving a player grants +15), while negative ones decrease it (e.g., killing a player deducts -5). The system includes event gating to restrict access to certain activities based on karma levels, preventing "good" players from committing crimes or "bad" players from heroic deeds. It integrates seamlessly with QBCore's notification and command systems, uses MySQL for persistent storage, and supports debugging, webhooks, and modular configurations.
+Key concepts:
+- **Karma/ Reputation**: Tracks how "good" or "bad" a player’s actions are, shaping gameplay experiences.  
+- **SQL Tracking**: Each player’s karma is stored permanently using `oxmysql`. This ensures persistence across sessions.  
+- **Event Gating**: Specific server events are only accessible when a player has sufficient karma, defined in `gating.lua`.  
+- **Admin Tools**: Full control over player karma, including debug checks, event triggers, and direct setting of values.  
+- **Language Support**: Configurable language files for messages and debug outputs, supporting internationalization.
 
-This system enhances roleplay by enforcing consequences for actions, encouraging balanced gameplay. It's modular, extensible, and developer-friendly, allowing easy integration with other scripts via exports.
+---
 
-### Key Features
-- **Base Karma Management**: Configurable starting (50), minimum (0), and maximum (100) values. Optional negative karma support.
-- **Regeneration System**: Karma regenerates toward the base over time—600 minutes online or 150 minutes offline (implementation pending; see Customization section).
-- **Event-Based Karma Changes**: Pre-defined positive and negative events with customizable amounts and reasons.
-- **Event Gating**: Min/max karma requirements for events (e.g., bank robbery requires karma ≤ 50).
-- **Admin Commands**: Secure commands for managing karma (set, add, check, reset, debug) with admin permissions.
-- **Notifications**: Uses QBCore's notify system for real-time feedback on karma updates.
-- **Database Integration**: Stores data in a `player_karma` MySQL table (auto-created on startup).
-- **Logging & Webhooks**: Debug console logs and optional Discord webhooks for karma changes.
-- **Language Support**: Modular language files for user messages and debug outputs (default: English).
-- **Exports for Integration**: Server-side functions to get/set karma, apply events, and check gating from other scripts.
-- **Debug Mode**: Extensive console logging for troubleshooting.
+## Features
 
-This script is ideal for RP servers aiming to add depth to player interactions without overcomplicating core mechanics.
+* Positive and negative karma events with reason tracking
+* Configurable karma min, max, base, and regeneration timers
+* Event gating system based on `gating.lua` with min/max thresholds
+* Admin commands: set, add, reset, check, and debug karma
+* Webhook notifications for karma changes
+* Modular language support including debug logs
+
+---
 
 ## Installation
 
-1. **Prerequisites**:
-   - FiveM server with QBCore framework installed.
-   - MySQL database (compatible with oxmysql or similar).
-   - Admin permissions configured in QBCore for commands.
+1. Place the resource folder (e.g., `karma_system`) in your server’s `resources` directory.
+2. Add `ensure karma_system` to your `server.cfg` (replace with actual folder name).
+3. Ensure dependencies:
+   - qb-core (v1.1+)
+   - oxmysql
+4. Restart the server. Karma tables will auto-generate in your database.
 
-2. **Setup Steps**:
-   - Download the script and extract it to your server's `resources` folder (e.g., `resources/karma`).
-   - Add the following to your `server.cfg`:
-     ```
-     ensure karma
-     ```
-   - Restart the server. The script will automatically create the `player_karma` table in your database:
-     ```sql
-     CREATE TABLE IF NOT EXISTS player_karma (
-         identifier VARCHAR(50) NOT NULL PRIMARY KEY,
-         karma INT NOT NULL DEFAULT 50,
-         last_update BIGINT NOT NULL DEFAULT 0
-     );
-     ```
-   - Verify installation: Join the server and check console for language load/debug messages (if `Config.Debug = true`).
-
-If issues arise (e.g., missing dependencies), check server console for errors like "Missing language file".
+---
 
 ## Configuration
 
-All configurations are modular for easy editing. Primary file: `config/config.lua`.
+### `config/config.lua`
 
-### Base Settings (`config/config.lua`)
-- `Config.BaseKarma = 50`: Starting karma for new players.
-- `Config.MinKarma = 0`: Lowest karma (unless `Config.AllowNegative = true`).
-- `Config.MaxKarma = 100`: Highest karma.
-- `Config.RegenToBaseMinutesOnline = 600`: Time (minutes) to regen to base while online.
-- `Config.RegenToBaseMinutesOffline = 150`: Time for offline regen.
-- `Config.Webhook = nil`: Discord webhook URL for logs (set to a string URL to enable).
-- `Config.WebhookMessage = 'Karma │ %player% → %player_karma% │ %reason%'`: Customizable webhook format.
-- `Config.Language = 'en'`: User-facing language.
-- `Config.DebugLanguage = 'en'`: Debug language.
-- `Config.Debug = true`: Enable console debug logs.
-- `Config.Admins = {}`: Whitelist for admins (currently unused; extend if needed).
+* Base karma values, min/max
+* Karma regeneration timers and units
+* Webhook URL (set to a valid Discord webhook for notifications)
+* Language and debug selection
+* Debug toggle
 
-### Commands (`config/commands.lua`)
-Customize command names:
-```lua
-Config.Commands = {
-    setKarma = 'setkarma',
-    addKarma = 'addkarma',
-    checkKarma = 'checkkarma',
-    resetKarma = 'resetkarma',
-    debugKarma = 'debugkarma'
-}
+### `config/gating.lua`
+
+* Assign minimum and/or maximum karma values for server events:
+
 ```
-These integrate with QBCore's command system in `server.lua`.
-
-### Positive Events (`config/adding.lua`)
-Add or modify events that increase karma:
-```lua
-Config.AddKarmaEvents = {
-    help_civilian = { amount = 10, reason = 'Helped a civilian' },
-    revived_player = { amount = 15, reason = 'Revived a downed player' },
-    -- Add custom: my_custom_event = { amount = 25, reason = 'Custom good deed' }
-}
-```
-
-### Negative Events (`config/removing.lua`)
-Events that decrease karma (use negative amounts):
-```lua
-Config.RemoveKarmaEvents = {
-    bank_robbery = { amount = -50, reason = 'Bank robbery' },
-    -- Add custom: my_bad_event = { amount = -30, reason = 'Bad action' }
-}
-```
-
-### Event Gating (`config/gating.lua`)
-Define min/max requirements for events:
-```lua
 Config.Gating = {
     event_help_civilian = { min = 10 },
     event_bank_robbery = { max = 50 },
-    -- Custom: my_event = { min = 20, max = 80 }
 }
 ```
-Events prefixed with `event_` for clarity.
 
-### Language Files
-- `config/lang/en.lua`: User messages (e.g., notifications).
-  ```lua
-  Strings = {
-      karmaUpdatedReason = 'Reputation updated by %amount%. Reason: %reason%',
-      -- Customize or add new strings
-  }
-  Exports = { -- Placeholders for string gsub
-      Amount = '%amount%',
-      Reason = '%reason%'
-  }
-  ```
-- `config/lang/debug/en.lua`: Debug-specific messages.
+### `config/adding.lua` & `config/removing.lua`
 
-Add new languages by creating files like `fr.lua` and updating `Config.Language`.
+* Define events, karma impact, and reason keys (mapped to Strings in lang files):
+
+```
+Config.AddKarmaEvents = {
+    help_civilian = { amount = 10, reason_key = 'help_civilian' },
+}
+Config.RemoveKarmaEvents = {
+    bank_robbery = { amount = -50, reason_key = 'bank_robbery' },
+}
+```
+
+### `config/commands.lua`
+
+* Customize command names for admin tools.
+
+---
+
+## File Structure
+
+```
+karma_system/
+├─ fxmanifest.lua
+├─ server.lua
+├─ client.lua
+├─ config/
+│  ├─ config.lua
+│  ├─ commands.lua
+│  ├─ gating.lua
+│  ├─ adding.lua
+│  ├─ removing.lua
+│  └─ lang/
+│     ├─ en.lua
+│     └─ debug/
+│        └─ en.lua
+├─ README.md
+```
+
+---
 
 ## Usage
 
-### In-Game Player Experience
-- **On Join**: Karma loads automatically via `QBCore:Client:OnPlayerLoaded` and `karma:onPlayerLoaded`.
-- **Karma Updates**: When an event triggers (e.g., reviving), karma changes, and a notification appears: "Reputation updated by 15. Reason: Revived a downed player".
-- **Gating**: Attempting a gated event (e.g., bank robbery with high karma) shows an error: "Your reputation is too high to access this event."
-- **Regeneration**: (Pending full implementation) Karma drifts back to base over time.
+### Server-Side (Exports)
 
-### Admin Commands
-Run as admin (QBCore permission: 'admin'):
-- `/setkarma [playerID] [value]`: Set to exact value.
-- `/addkarma [playerID] [amount]`: Add positive/negative amount.
-- `/checkkarma [playerID]`: View current karma.
-- `/resetkarma [playerID]`: Reset to base.
-- `/debugkarma [playerID]`: Detailed debug info (if debug enabled).
-
-Commands validate inputs and log to console.
-
-### Integrating with Other Scripts
-Use exports for seamless integration.
-
-#### Server-Side Exports
-- `exports['karma']:GetKarma(sourceOrIdentifier)`: Retrieve karma.
-  ```lua
-  local karma = exports['karma']:GetKarma(source)
-  print("Player karma: " .. karma)
-  ```
-- `exports['karma']:SetKarma(srcOrId, value, reason)`: Set karma and notify.
-  ```lua
-  exports['karma']:SetKarma(source, 75, 'Admin adjustment')
-  ```
-- `exports['karma']:ApplyKarmaEvent(event, src)`: Apply configured event.
-  ```lua
-  exports['karma']:ApplyKarmaEvent('revived_player', source)  -- +15 karma
-  ```
-- `exports['karma']:HasKarmaForEvent(src, event)`: Check gating.
-  ```lua
-  local allowed, message = exports['karma']:HasKarmaForEvent(source, 'event_bank_robbery')
-  if not allowed then
-      TriggerClientEvent('QBCore:Notify', source, message, 'error')
-      return
-  end
-  -- Proceed with robbery logic
-  ```
-- Language Exports: `GetLangStrings()`, `GetLangExports()`, etc., for custom UIs.
-
-#### Client-Side
-- `GetLocalKarma(cb)`: Callback for local karma.
-  ```lua
-  GetLocalKarma(function(karma)
-      print("My karma: " .. karma)
-  end)
-  ```
-- `TriggerKarmaEvent(event)`: Trigger server gating check.
-  ```lua
-  TriggerKarmaEvent('event_my_custom')
-  ```
-
-Hook into events like `karma:updated` for custom UI.
-
-## Debugging and Troubleshooting
-
-- **Enable Debug**: Set `Config.Debug = true` in `config/config.lua`. This prints detailed logs:
-  - "[DEBUG] Karma changed for [id]: 50 → 65 (Reason: Revived a downed player)"
-  - "[DEBUG] Applied karma event 'revived_player' for player [id]: 50 → 65"
-  - Command executions, gating checks, etc.
-- **Common Issues**:
-  - **No Notifications**: Ensure `QBCore.Functions.Notify` works. Test with `/addkarma`. Check if `karma:updated` triggers (add print in client.lua).
-  - **Database Errors**: Verify MySQL connection. Table auto-creates; check for SQL errors in console.
-  - **Invalid IDs/Events**: Commands/exports validate and log failures (e.g., "[DEBUG] setkarma failed: invalid target ID").
-  - **Gating Not Working**: Confirm event names match (e.g., 'event_bank_robbery'). Test with `HasKarmaForEvent`.
-- **Testing**: Use `/debugkarma [id]` for verbose output. Monitor console during actions.
-
-If notifications fail, add more prints in `SetKarma` or `karma:updated`.
-
-## Customization and Advanced Editing
-
-### Adding Regeneration
-The config has regen times, but implementation is partial. Add in `server.lua`:
-```lua
--- Online Regen Thread (example)
-CreateThread(function()
-    while true do
-        Wait(60000)  -- Every minute
-        for _, player in pairs(QBCore.Functions.GetPlayers()) do
-            local id = Identifier(player)
-            local current = GetKarma(id)
-            if current ~= Config.BaseKarma then
-                local adjust = (current > Config.BaseKarma) and -1 or 1
-                SetKarma(player, current + adjust, 'Regeneration')
-                if Config.Debug then print('[DEBUG] Regen for ' .. id .. ': ' .. current .. ' → ' .. (current + adjust)) end
-            end
-        end
-    end
-end)
-
--- Offline Regen: On load in EnsureRow or GetKarma
-local function CalculateOfflineRegen(id)
-    local lastUpdate = MySQL.scalar.await('SELECT last_update FROM player_karma WHERE identifier=?', {id})
-    local timeDiff = os.time() - lastUpdate
-    local minutesOffline = timeDiff / 60
-    local regenSteps = math.floor(minutesOffline / (Config.RegenToBaseMinutesOffline / (Config.MaxKarma - Config.MinKarma)))
-    -- Adjust karma toward base by regenSteps
-    -- Update last_update on save
-end
 ```
-Call in `GetKarma` before returning.
-
-### Adding New Events
-1. Add to `adding.lua` or `removing.lua`.
-2. Add gating to `gating.lua` if needed.
-3. In other scripts, call `ApplyKarmaEvent` or trigger `karma:onEventTrigger` for gating.
-
-### Extending Languages
-Create `config/lang/fr.lua` with translated `Strings` and `Exports`. Set `Config.Language = 'fr'`.
-
-### Webhook Customization
-Format uses placeholders from `Exports`. Add more in language files.
-
-### Allowing Negative Karma
-In `SetKarma`, modify:
-```lua
-local newVal = Config.AllowNegative and value or math.max(Config.MinKarma, math.min(value, Config.MaxKarma))
+exports['karma_system']:ApplyKarmaEvent('help_civilian', playerId)
+exports['karma_system']:SetKarma(playerId, 75, "Manual adjustment")
+local karma = exports['karma_system']:GetKarma(playerId)
+local canAccess, msg = exports['karma_system']:HasKarmaForEvent(playerId, 'event_bank_robbery')
 ```
 
-### Best Practices
-- **Modularity**: Keep custom events in separate configs for easy updates.
-- **Performance**: Avoid heavy loops; use threads sparingly.
-- **Security**: Commands are admin-only; add checks if extending.
-- **Testing**: Use a dev server. Simulate events with commands.
-- **Contributions**: Fork and PR for features like full regen or UI integration.
+### Client-Side
 
-For questions, check console debugs or community forums. Last updated: [Insert Date].
+To check gating before triggering a gated event:
+
+```
+TriggerKarmaEvent('some_gated_event')  -- Triggers server check; cancels if not allowed
+```
+
+To get local karma:
+
+```
+GetLocalKarma(function(k) print("Your Karma: " .. k) end)
+```
+
+---
+
+## Language & Debug System
+
+* **Main Language**: `config/lang/en.lua` - User notifications and reasons.
+* **Debug Language**: `config/lang/debug/en.lua` - Admin/debug logs.
+
+Placeholders use gsub for dynamic values (e.g., `{player}`, `{player_karma}`).
+
+---
+
+## Admin Commands
+
+| Command     | Description                      | Args       |
+| ----------- | -------------------------------- | ---------- |
+| /setkarma   | Sets a player’s karma            | id, value  |
+| /addkarma   | Adds/subtracts karma             | id, amount |
+| /checkkarma | Checks a player’s current karma  | id         |
+| /resetkarma | Resets karma to base             | id         |
+| /debugkarma | Debug output of a player’s karma | id         |
+
+---
+
+## Events & Exports
+
+**Exports**
+
+- `GetKarma(sourceOrIdentifier)`
+- `SetKarma(sourceOrIdentifier, value, reason)`
+- `ApplyKarmaEvent(eventName, source)`
+- `HasKarmaForEvent(source, eventName)`
+- `GetLangStrings()`
+- `GetDebugStrings()`
+
+**Events**
+
+- `karma:updated` (client) - Triggered on karma change with new value and reason.
+- `karma:onPlayerLoaded` (server) - Ensures player data on load.
+- `karma:onEventTrigger` (server) - Checks gating for events.
+
+---
+
+## Performance & Safety
+
+* Uses prepared statements with `oxmysql` for security.
+* Optimized regeneration to minimize DB writes.
+* Event gating prevents unauthorized access.
+* Admin commands include validation checks.
+* Debug mode for detailed logging (toggle in config).
+
+---
+
+## Contributing
+
+* Fork the repository for fixes or features.
+* Maintain modular config structure and language support.
+
+---
+
+## Notes
+
+* Ensure `oxmysql` is properly configured.
+* Test events, gating, and karma changes in a staging environment.
+* Debug language provides verbose outputs for monitoring.
+* Resource name in exports may vary based on folder name.
+
+---
+```
+
+#### Other Config Files (unchanged)
+- `config/commands.lua`
+- `config/gating.lua`
+- `config/adding.lua`
+- `config/removing.lua`
+- `config/lang/en.lua`
+
+If you need further adjustments, let me know!
