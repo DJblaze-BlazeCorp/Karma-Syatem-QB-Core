@@ -1,5 +1,3 @@
-#### README.md (updated to match current code)
-```
 # QBCore Karma / Reputation System  
 Version **1.8.0** — Full Modular Configuration, Event Gating Only, Admin Tools, SQL Tracking, Language Exports, Debug Language Support
 
@@ -47,8 +45,8 @@ Key concepts:
 
 ## Installation
 
-1. Place the resource folder (e.g., `karma_system`) in your server’s `resources` directory.
-2. Add `ensure karma_system` to your `server.cfg` (replace with actual folder name).
+1. Place the resource folder (e.g., `karma-system`) in your server’s `resources` directory.
+2. Add `ensure karma-system` to your `server.cfg` (replace with actual folder name).
 3. Ensure dependencies:
    - qb-core (v1.1+)
    - oxmysql
@@ -74,6 +72,7 @@ Key concepts:
 Config.Gating = {
     event_help_civilian = { min = 10 },
     event_bank_robbery = { max = 50 },
+    recycle_duty_toggle = { min = 10 },
 }
 ```
 
@@ -99,7 +98,7 @@ Config.RemoveKarmaEvents = {
 ## File Structure
 
 ```
-karma_system/
+karma-system/
 ├─ fxmanifest.lua
 ├─ server.lua
 ├─ client.lua
@@ -123,10 +122,10 @@ karma_system/
 ### Server-Side (Exports)
 
 ```
-exports['karma_system']:ApplyKarmaEvent('help_civilian', playerId)
-exports['karma_system']:SetKarma(playerId, 75, "Manual adjustment")
-local karma = exports['karma_system']:GetKarma(playerId)
-local canAccess, msg = exports['karma_system']:HasKarmaForEvent(playerId, 'event_bank_robbery')
+exports['karma-system']:ApplyKarmaEvent('help_civilian', playerId)
+exports['karma-system']:SetKarma(playerId, 75, "Manual adjustment")
+local karma = exports['karma-system']:GetKarma(playerId)
+local canAccess, msg = exports['karma-system']:HasKarmaForEvent(playerId, 'event_bank_robbery')
 ```
 
 ### Client-Side
@@ -210,13 +209,3 @@ Placeholders use gsub for dynamic values (e.g., `{player}`, `{player_karma}`).
 * Resource name in exports may vary based on folder name.
 
 ---
-```
-
-#### Other Config Files (unchanged)
-- `config/commands.lua`
-- `config/gating.lua`
-- `config/adding.lua`
-- `config/removing.lua`
-- `config/lang/en.lua`
-
-If you need further adjustments, let me know!
