@@ -1,6 +1,6 @@
+-- Modified server.lua for karma script
 -- server.lua
 local QBCore = exports['qb-core']:GetCoreObject()
-
 -- CONFIG LOAD (Globals from shared: Strings, DebugStrings, etc.)
 local AddEvents = Config.AddKarmaEvents
 local RemoveEvents = Config.RemoveKarmaEvents
@@ -14,7 +14,6 @@ local unit_multipliers = {
     mo = 2592000 -- approx 30 days
 }
 local tick_seconds = Config.RegenTickValue * (unit_multipliers[Config.RegenTickUnit] or 60)
-
 -- DATABASE SETUP
 MySQL.query.await([[
     CREATE TABLE IF NOT EXISTS player_karma (
@@ -23,20 +22,17 @@ MySQL.query.await([[
         last_update BIGINT NOT NULL DEFAULT 0
     );
 ]])
-
 -- UTILITY FUNCTIONS
 local function Identifier(src)
     local player = QBCore.Functions.GetPlayer(src)
     return player and player.PlayerData.citizenid or nil
 end
-
 local function EnsureRow(id)
     MySQL.insert.await(
         'INSERT IGNORE INTO player_karma (identifier, karma, last_update) VALUES (?, ?, ?)',
         { id, Config.BaseKarma, os.time() }
     )
 end
-
 local function CalculateRegen(current, seconds_diff)
     if seconds_diff <= 0 then return current end
     local num_ticks = math.floor(seconds_diff / tick_seconds)
@@ -64,7 +60,6 @@ local function CalculateRegen(current, seconds_diff)
     end
     return new
 end
-
 local function GetKarma(sourceOrIdentifier)
     local is_src = type(sourceOrIdentifier) == "number"
     local src = is_src and sourceOrIdentifier or nil
@@ -87,7 +82,6 @@ local function GetKarma(sourceOrIdentifier)
     end
     return new_karma
 end
-
 local function SetKarma(srcOrId, value, reason)
     local is_src = type(srcOrId) == "number"
     local src = is_src and srcOrId or nil
@@ -119,7 +113,6 @@ local function SetKarma(srcOrId, value, reason)
     end
     return true
 end
-
 local function ApplyKarmaEvent(event, src)
     local e = AddEvents[event] or RemoveEvents[event]
     if not e then
@@ -134,7 +127,6 @@ local function ApplyKarmaEvent(event, src)
         print(('[DEBUG] Applied karma event "%s" for player %s: %d → %d'):format(event, Identifier(src) or 'unknown', lastKarma, updated))
     end
 end
-
 local function HasKarmaForEvent(src, event)
     local gate = Gating[event]
     if not gate then return true, nil end
@@ -156,7 +148,6 @@ local function HasKarmaForEvent(src, event)
     end
     return allowed, message
 end
-
 local function ApplyOnlineRegen(src)
     local id = Identifier(src)
     if not id then return end
@@ -178,7 +169,6 @@ local function ApplyOnlineRegen(src)
         SetKarma(src, new, Strings.regeneration)
     end
 end
-
 -- EXPORTS
 exports('GetKarma', GetKarma)
 exports('SetKarma', SetKarma)
@@ -188,12 +178,14 @@ exports('GetLangStrings', function() return Strings end)
 exports('GetLangExports', function() return Exports end)
 exports('GetDebugStrings', function() return DebugStrings end)
 exports('GetDebugExports', function() return DebugExports end)
-
 -- CALLBACK
 QBCore.Functions.CreateCallback('karma:getKarma', function(source, cb)
     cb(GetKarma(source))
 end)
-
+QBCore.Functions.CreateCallback('karma:hasKarmaForEvent', function(source, cb, event)
+    local allowed, msg = HasKarmaForEvent(source, event)
+    cb(allowed, msg)
+end)
 -- PLAYER LOADED EVENT
 RegisterNetEvent('karma:onPlayerLoaded', function()
     local src = source
@@ -211,7 +203,6 @@ RegisterNetEvent('karma:onPlayerLoaded', function()
     MySQL.update.await('UPDATE player_karma SET last_update = ? WHERE identifier = ?', {os.time(), id})
     if Config.Debug then print('[DEBUG] Ensured karma row and applied offline regen for player ' .. id) end
 end)
-
 -- EVENT ENFORCEMENT
 AddEventHandler('karma:onEventTrigger', function(event)
     local src = source
@@ -222,7 +213,6 @@ AddEventHandler('karma:onEventTrigger', function(event)
         CancelEvent()
     end
 end)
-
 -- ADMIN COMMANDS
 QBCore.Commands.Add(Commands.setKarma, 'Set player karma', {
     { name='id', help='Player ID' },
@@ -247,7 +237,6 @@ QBCore.Commands.Add(Commands.setKarma, 'Set player karma', {
         TriggerClientEvent('QBCore:Notify', source, 'Failed to set karma', 'error')
     end
 end, 'admin')
-
 QBCore.Commands.Add(Commands.addKarma, 'Add or subtract karma', {
     { name='id', help='Player ID' },
     { name='amount', help='Amount (+/-)' }
@@ -272,7 +261,6 @@ QBCore.Commands.Add(Commands.addKarma, 'Add or subtract karma', {
         TriggerClientEvent('QBCore:Notify', source, 'Failed to add karma', 'error')
     end
 end, 'admin')
-
 QBCore.Commands.Add(Commands.checkKarma, 'See player karma', {
     { name='id', help='Player ID' }
 }, true, function(source, args)
@@ -286,7 +274,6 @@ QBCore.Commands.Add(Commands.checkKarma, 'See player karma', {
         :gsub(Exports.PlayerName or '%%player%%', args[1])
         :gsub(Exports.PlayerKarma or '%%player_karma%%', tostring(lastValue)), 'primary')
 end, 'admin')
-
 QBCore.Commands.Add(Commands.resetKarma, 'Reset player karma to base', {
     { name='id', help='Player ID' }
 }, true, function(source, args)
@@ -303,7 +290,6 @@ QBCore.Commands.Add(Commands.resetKarma, 'Reset player karma to base', {
         TriggerClientEvent('QBCore:Notify', source, 'Failed to reset karma', 'error')
     end
 end, 'admin')
-
 QBCore.Commands.Add(Commands.debugKarma, 'Debug karma values', {
     { name='id', help='Player ID' }
 }, true, function(source, args)
@@ -321,7 +307,6 @@ QBCore.Commands.Add(Commands.debugKarma, 'Debug karma values', {
         :gsub(DebugExports.PlayerName or '%%player%%', args[1])
         :gsub(DebugExports.PlayerKarma or '%%player_karma%%', tostring(value)), 'primary')
 end, 'admin')
-
 -- ONLINE REGEN LOOP
 CreateThread(function()
     while true do
