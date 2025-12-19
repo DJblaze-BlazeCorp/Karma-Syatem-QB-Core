@@ -8,12 +8,12 @@ Config.Gating = {
     event_protected_store = { min = 20 },
 
     event_bank_robbery    = { max = 50 },
-	event_store_rob_register = { max = 500 },
-    event_store_rob_safe  = { max = 400 },
+	store_rob_register    = { max = 500 },
+    store_rob_safe        = { max = 400 },
     event_player_killed   = { max = 5 },
     event_police_attack   = { max = 15 },
     event_hostage_taken   = { max = 25 },
 
     -- 🔴 Recycling duty gate
-    event_recycle_duty     = { min = 450 }
+    event_recycle_duty_toggle = { min = 450 }
 }
